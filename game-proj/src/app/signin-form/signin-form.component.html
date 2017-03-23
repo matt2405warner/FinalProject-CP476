@@ -1,0 +1,19 @@
+<md-card>
+  <form (ngSubmit)="signIn(signInForm.value)" #signInForm="ngForm">
+    <md-card-content>
+      <md-card-title>
+        Sign In
+      </md-card-title>
+      <md-input-container>
+        <input type="email" mdInput placeholder="Email" ngModel name="email">
+      </md-input-container>
+      <md-input-container>
+        <input type="password" mdInput placeholder="Password" ngModel name="password">
+      </md-input-container>
+    </md-card-content>
+    <md-card-actions>
+      <button type="submit" md-button [disabled]="!signInForm.form.valid">Sign In</button>
+      <button type="submit" md-button (click)="signUp()">Sign Up</button>
+    </md-card-actions>
+  </form>
+</md-card>
