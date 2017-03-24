@@ -1,18 +1,25 @@
 <md-card>
-  <form (ngSubmit)="signIn(signInForm.value)" #signInForm="ngForm">
-    <md-card-content>
+  <form [formGroup]='signInForm' (ngSubmit)="signIn()">
+    <md-card-header>
       <md-card-title>
         Sign In
       </md-card-title>
-      <md-input-container>
-        <input type="email" mdInput placeholder="Email" ngModel name="email">
-      </md-input-container>
-      <md-input-container>
-        <input type="password" mdInput placeholder="Password" ngModel name="password">
-      </md-input-container>
+    </md-card-header>
+    <md-card-content>
+        <md-input-container>
+          <input mdInput placeholder="Email" formControlName="email" required>
+        </md-input-container>
+        <md-input-container>
+          <input type="password" mdInput placeholder="Password" formControlName="password" required>
+        </md-input-container>
+      <div *ngIf="formErrors && isError && submitted" class="alert-box">
+        <span *ngIf="formErrors.email">{{ formErrors.email }}</span>
+        <span *ngIf="formErrors.password">{{ formErrors.password }}</span>
+        <span *ngIf="formErrors.error">{{ formErrors.error }}</span>
+      </div>
     </md-card-content>
     <md-card-actions>
-      <button type="submit" md-button [disabled]="!signInForm.form.valid">Sign In</button>
+      <button type="submit" md-button>Sign In</button>
       <button type="submit" md-button (click)="signUp()">Sign Up</button>
     </md-card-actions>
   </form>

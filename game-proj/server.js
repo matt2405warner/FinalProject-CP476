@@ -16,8 +16,8 @@ app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/', routes);
 
 // Catch all other routes and return the index files
+// NOTE: let angular handle non-api calls
 app.get('*', (req, res) => {
-    console.log("catch all used");
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 

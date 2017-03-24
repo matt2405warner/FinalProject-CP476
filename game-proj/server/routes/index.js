@@ -3,16 +3,14 @@ const router = express.Router();
 const db = require('../database/index.js');
 
 router.post('/api/signin', (req, res) => {
-    console.log(req.body);
     db.auth.signInWithEmailAndPassword(req.body.email, req.body.password)
     .then((user) => {
         let stringData = JSON.stringify(user.providerData);
         let userData = JSON.parse(stringData);
-        res.setHeader('Content-Type', 'application/json');
-        res.send(userData[0]); 
+        res.json(userData[0]); 
     })
     .catch((error) => {
-        res.send(error);
+        res.status(400).json(error);
     });
 });
 
@@ -21,11 +19,10 @@ router.post('/api/signup', (req, res) => {
     .then((user) => {
         let stringData = JSON.stringify(user.providerData);
         let userData = JSON.parse(stringData);
-        res.setHeader('Content-Type', 'application/json');
-        res.send(userData[0]); 
+        res.json(userData[0]); 
     })
     .catch((error) => {
-        res.send(error);
+        res.status(400).json(error);
     });
 });
 
