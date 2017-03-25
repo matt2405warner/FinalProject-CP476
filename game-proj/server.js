@@ -2,8 +2,10 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const bodyParser = require('body-parser');
+const game = require('./server/socket/game.js');
+const pingpong = require('./server/socket/pingpong.js');
 
-const routes = require('./server/routes');
+//const routes = require('./server/routes');
 const app = express();
 
 // Used for POST data parsing
@@ -13,7 +15,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 // Point to the apps static files (i.e. HTML, CSS, TS)
 app.use(express.static(path.join(__dirname, 'dist')));
 
-app.use('/', routes);
+//app.use('/', routes);
 
 // Catch all other routes and return the index files
 // NOTE: let angular handle non-api calls
@@ -29,3 +31,10 @@ const server = http.createServer(app);
 /*const io = require('./server/socket/index')(server);*/
 
 server.listen(port, () => console.log(`APP running on localhost: ${port}`));
+
+const io = require('./server/socket')(server);
+
+io.sockets.on('connection', (socket) => {
+    const gSocket = game.init(socket);
+    const pingpongSocket = pingpong.init(io, socket);
+});

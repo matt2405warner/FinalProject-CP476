@@ -62,13 +62,12 @@ export class SigninFormComponent implements OnInit, IUserForm {
   signIn() {
     if (!this.isError) {
       this.submitted = true;
-      this.router.navigate(['/dashboard']);
-      /*this.af.auth.login({email: this.signInForm.value.email, password: this.signInForm.value.password})
+      this.af.auth.login({email: this.signInForm.value.email, password: this.signInForm.value.password})
         .then(data => {
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/game/pingpong']);
         })
         .catch(error => this.onError(error));
-        */
+        
     }
   }
 
