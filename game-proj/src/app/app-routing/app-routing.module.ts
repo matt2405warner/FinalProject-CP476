@@ -24,7 +24,10 @@ const routes: Routes = [
   },
   {
     path: 'game/pingpong',
-    component: PingPongComponent
+    component: PingPongComponent,
+    data: {
+      host: false
+    }
   },
   {
     path: '**',

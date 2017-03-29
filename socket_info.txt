@@ -1,0 +1,12 @@
+Socket Commands:
+
+/* generic socket events */
+=> createRoom => clientGameCreated { gameId: ..., socketId: ... }
+=> joinGame   => clientJoinedGame  { gameId: ..., socketId: ... }
+=> endGame    => clientEndGame     { gameId: ..., socketId: ..., score: {}}
+=> startGame  => clientStartGame   { gameId: ..., socketId: ... }
+
+/* ping pong socket events */
+=> moveUp     => clientMoveUp      { gameId: ..., socketId: ... }
+=> moveDown   => clientMoveDown    { gameId: ..., socketId: ... }
+=> scored     => clientScored      { gameId: ..., socketId: ... } /* this will need some tweaking */

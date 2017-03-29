@@ -1,3 +1,16 @@
-<p>
-  ping-pong works!
-</p>
+<div class="gameSetup">
+    <h2>Game Room Id: <span id="gameRoomId"></span></h2>
+    <h4>Player Count:</h4>
+    <div class="row">
+        <md-input-container>
+            <input mdInput placeholder="Local">
+        </md-input-container>
+        <md-input-container>
+            <input mdInput placeholder="Network">
+        </md-input-container>
+    </div>
+    <button md-button>Start Game</button>
+    <div id="gameStatus"></div>
+</div>
+<canvas id="gameCanvas">
+</canvas>

@@ -3,7 +3,6 @@ const path = require('path');
 const http = require('http');
 const bodyParser = require('body-parser');
 const game = require('./server/socket/game.js');
-const pingpong = require('./server/socket/pingpong.js');
 
 //const routes = require('./server/routes');
 const app = express();
@@ -28,13 +27,10 @@ app.set('port', port);
 
 const server = http.createServer(app);
 
-/*const io = require('./server/socket/index')(server);*/
-
 server.listen(port, () => console.log(`APP running on localhost: ${port}`));
 
 const io = require('./server/socket')(server);
-
 io.sockets.on('connection', (socket) => {
-    const gSocket = game.init(socket);
-    const pingpongSocket = pingpong.init(io, socket);
+    console.log("client is connected");
+    const gSocket = game.init(io, socket);
 });

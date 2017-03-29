@@ -3,6 +3,5 @@ module.exports = function(server) {
     io.on('connection', function(socket) {
 
     });
-    const users = require('./user.js')(io);
     return io;
 }

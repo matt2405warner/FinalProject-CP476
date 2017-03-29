@@ -24,6 +24,9 @@ import { AngularFireModule, AuthProviders, AuthMethods } from 'angularfire2';
 /* routing */
 import { AppRoutingModule } from './app-routing/app-routing.module';
 
+/* providers */
+import { GameSocketService } from './game-socket.service';
+
 const firebaseConfig = {
   apiKey: "AIzaSyBMhTKcsx1mBtRAASDy_YvoTNQk9yohItU",
   authDomain: "multigame-71efd.firebaseapp.com",
@@ -56,6 +59,7 @@ const firebaseAuthConfig = {
     AngularFireModule.initializeApp(firebaseConfig, firebaseAuthConfig)
   ],
   providers: [
+    GameSocketService
   ],
   bootstrap: [AppComponent]
 })
