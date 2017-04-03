@@ -1,16 +1,27 @@
 <div class="gameSetup">
     <h2>Game Room Id: <span id="gameRoomId"></span></h2>
-    <h4>Player Count:</h4>
-    <div class="row">
+    <form [formGroup]='pongInfoForm' (ngSubmit)="startGame()">
+        <h4>Player Count:</h4>
+        <div class="row">
+            <md-input-container>
+                <input mdInput placeholder="Local" formControlName="localPlayerCount" required>
+            </md-input-container>
+            <md-input-container>
+                <input mdInput placeholder="Network" formControlName="networkPlayerCount" required>
+            </md-input-container>
+        </div>
+        <h4>Score To Win:</h4>
         <md-input-container>
-            <input mdInput placeholder="Local">
+            <input mdInput placeholder="Score" formControlName="scoreToWin" required>
         </md-input-container>
-        <md-input-container>
-            <input mdInput placeholder="Network">
-        </md-input-container>
+        <button md-button type="submit">Start Game</button>
+    </form>
+    <div class="column">
+        <h4>Score:</h4>
+        <p>Player 1: <strong><span id="player1Score">0</span></strong></p>
+        <p>Player 2: <strong><span id="player2Score">0</span></strong></p>
     </div>
-    <button md-button>Start Game</button>
-    <div id="gameStatus"></div>
+    <button md-button (click)="logout()">Log Out</button>
 </div>
-<canvas id="gameCanvas">
+<canvas id="gameCanvas" [hidden]="!pongService.isRunning()">
 </canvas>

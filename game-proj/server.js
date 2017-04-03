@@ -31,6 +31,5 @@ server.listen(port, () => console.log(`APP running on localhost: ${port}`));
 
 const io = require('./server/socket')(server);
 io.sockets.on('connection', (socket) => {
-    console.log("client is connected");
     const gSocket = game.init(io, socket);
 });

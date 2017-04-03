@@ -4,6 +4,7 @@ import * as io from 'socket.io-client';
 
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
+import 'rxjs/add/operator/map';
 
 @Injectable()
 export class GameSocketService {
@@ -11,11 +12,14 @@ export class GameSocketService {
   constructor() { }
 
   socket: any;
-  gameData: Object;
 
   init(uri: string) {
       this.socket = io.connect(uri);
       console.log("game socket init");
+  }
+
+  getSenderId() {
+      return this.socket.id;
   }
 
   registerConnect() {
@@ -25,6 +29,19 @@ export class GameSocketService {
         });
       });
       return observe;
+  }
+
+  registerClientDisconnect() {
+      let observe = new Observable(observer => {
+        this.socket.on('clientDisconnected', data => {
+            observer.next(data);
+        });
+      });
+      return observe;
+  }
+
+  emitPlayerDisconnect(data: Object) {
+      this.socket.emit('playerDisconnect', data);
   }
 
   registerDisconnect() {
@@ -86,6 +103,7 @@ export class GameSocketService {
   }
 
   emitEndGame(data: Object) {
+      console.log("end game");
       this.socket.emit('endGame', data);
   }
 
@@ -98,8 +116,8 @@ export class GameSocketService {
       return observe;
   }
 
-  emitMoveStartUp() {
-
+  emitMoveStartUp(data: Object) {
+    this.socket.emit('moveStartUp', data);
   }
 
   registerMoveStartDown() {
@@ -111,8 +129,8 @@ export class GameSocketService {
       return observe;
   }
 
-  emitMoveStartDown() {
-      
+  emitMoveStartDown(data: Object) {
+      this.socket.emit('moveStartDown', data);
   }
 
   registerMoveFinishUp() {
@@ -133,7 +151,11 @@ export class GameSocketService {
       return observe;
   }
 
-  setGameData(data: Object) {
-      this.gameData = data;
+  emitScored(data: Object) {
+      this.socket.emit('scored', data);
+  }
+
+  emitFullRoom(data: Object) {
+      this.socket.emit('roomFull', data);
   }
 }

@@ -7,6 +7,10 @@ import { Paddle } from './paddle';
 import { Player } from './player';
 import { KeyCodes } from './keycode';
 
+import { Observable } from 'rxjs/Observable';
+import { Subject } from 'rxjs/Subject';
+import 'rxjs/add/operator/map';
+
 @Injectable()
 export class PongService {
   private canvas: HTMLCanvasElement;
@@ -21,6 +25,8 @@ export class PongService {
   private ball : GameBall;
   private running: boolean = false;
 
+  private scoreToWin = 0;
+
   private roomSize = 2;
   private currentRoomSize = 0;
 
@@ -30,6 +36,12 @@ export class PongService {
   private playerInitialW = 10;
   private playerInitialH = 60;
   private playerPaddleY = (this.gameH / 2) - (this.playerInitialH / 2);
+
+  private gameData = new Subject();
+  private gameEnd = new Subject();
+  private player1Scored = new Subject();
+  private player2Scored = new Subject();
+  private gameId = 0;
 
   constructor(private gameSocket: GameSocketService, private ngZone: NgZone) { }
 
@@ -51,7 +63,6 @@ export class PongService {
     //this.player2 = new Player(new Paddle(this.gameW - playerPadding - playerInitialW, playerPaddleY, playerInitialW, playerInitialH, this.game2dContext));
     this.ball = new GameBall(this.gameW / 2, this.gameH / 2, this.game2dContext);
     this.ball.setRadius(5);
-    this.running = true;
 
     /* ------------------------------
     * Game Service Setup
@@ -59,54 +70,66 @@ export class PongService {
     this.gameSocket.init("http://localhost:3232");
   }
 
-  setupPlayers(localPlayerCount: number, networkPlayerCount: number) {
+  setupPlayers(localPlayerCount: number, networkPlayerCount: number, _scoreToWin: number) {
     this.currentRoomSize = localPlayerCount;
     if (localPlayerCount + networkPlayerCount == 2) {
+      this.scoreToWin = _scoreToWin;
       if (localPlayerCount == 2) {
-        this.setupPlayer1(true);
-        this.setupPlayer2(true);
-        this.gameLoop();
+        this.setupPlayer1();
+        this.setupPlayer2();
+        this.startGame();
       } else {
         this.gameSocket.registerDisconnect().subscribe(data => {
           console.log("disconnect", data);
+          this.currentRoomSize--;
+          if (this.currentRoomSize < this.roomSize) {
+            this.running = false;
+          }
         });
-        this.gameSocket.registerCreateGame().subscribe(data => {
-          this.gameSocket.setGameData(data);
-          console.log("register game", data);
+        this.gameSocket.registerClientDisconnect().subscribe(data => {
+          console.log("client disconnect", data);
+          this.currentRoomSize--;
+          if (this.currentRoomSize < this.roomSize) {
+            this.running = false;
+          }
+        });
+        this.gameSocket.registerCreateGame().subscribe((data: any) => {
+          this.gameId = data.gameId;
+          this.gameData.next(data); // propogate the new game data to all subscribers
         });
         this.gameSocket.registerJoinGame().subscribe((data: any) => {
-          console.log("player joined game", data);
           this.currentRoomSize++;
           if (this.currentRoomSize <= this.roomSize) {
             this.clientPlaying(data.senderId);
           } 
           if (this.currentRoomSize == this.roomSize) {
-            //this.gameSocket.emitStartGame();
-            this.ngZone.runOutsideAngular(() => {this.gameLoop();});
+            var gameData = {
+              gameId: this.gameId
+            }
+            this.gameSocket.emitStartGame(gameData);
+            this.startGame();
           } else {
-            // TODO: emit game room full
+            var gameEmitData = {
+              gameId: this.gameId
+            }
+            this.gameSocket.emitFullRoom(gameEmitData);
           }
         });
         this.gameSocket.registerMoveStartUp().subscribe((data: any) => {
-          console.log("move start up data", data);
           this.listenerKeys[KeyCodes.UP_ARROW] = true;
         });
         this.gameSocket.registerMoveStartDown().subscribe((data:any) => {
-          console.log("move start down data", data);
           this.listenerKeys[KeyCodes.DOWN_ARROW] = true;
         });
         this.gameSocket.registerMoveFinishUp().subscribe((data: any) => {
-          console.log("move finish up data", data);
           delete this.listenerKeys[KeyCodes.UP_ARROW];
         });
         this.gameSocket.registerMoveFinishDown().subscribe((data: any) => {
-          console.log("move finish down data", data);
           delete this.listenerKeys[KeyCodes.DOWN_ARROW];
         });
         this.gameSocket.emitCreateGame();
         if (localPlayerCount == 1) {
-          console.log("local player joined");
-          this.setupPlayer1(true);
+          this.setupPlayer1();
         }
       }
     }
@@ -114,21 +137,81 @@ export class PongService {
 
   gameLoop() {
     if (!this.running) { return; }
+    else if (this.player1.isWinner(this.scoreToWin)) {
+      let gameOverData = {
+        gameId: this.gameId,
+        winnerId: this.player1.id
+      }
+      this.gameSocket.emitEndGame(gameOverData);
+      this.reset();
+      var playerWon = "Player 1 won!";
+      this.gameEnd.next(playerWon);
+      return;
+    } else if (this.player2.isWinner(this.scoreToWin)) {
+      let gameOverData = {
+        gameId: this.gameId,
+        winnerId: this.player2.id
+      }
+      this.gameSocket.emitEndGame(gameOverData);
+      this.reset();
+      var playerWon = "Player 2 won!";
+      this.gameEnd.next(playerWon);
+      return;
+    }
     this.update();
     this.render();
     /* this sits the game at 60FPS and game stops rendering when browser goes out of focus */
     window.requestAnimationFrame(() => this.gameLoop());
   }
 
+  isRunning() {
+    return this.running;
+  }
+
+  startGame() {
+    this.running = true;
+    this.gameLoop();
+  }
+
+  reset() {
+    this.running = false;
+    this.currentRoomSize = 0;
+    this.player1 = null;
+    this.player2 = null;
+    this.scoreToWin = 0;
+    this.currentRoomSize = 0;
+  }
+
   update() {
     this.updatePlayers();
     let scored = this.ball.update(this.gameW, this.gameH, this.player1, this.player2);
     if (scored) {
-      if (this.ball.getYPos() < this.gameW / 2) {
-        console.log("player 2 scored!");
+      if (this.ball.getXPos() < this.gameW / 2) {
+        this.player2.scored();
+        this.player2Scored.next(this.player2.getScore());
+        var score = {
+          gameId: this.gameId,
+          senderId: this.gameSocket.getSenderId(),
+          player1: false,
+          player1Score: this.player1.getScore(),
+          player2: true,
+          player2Score: this.player2.getScore()
+        }
+        this.gameSocket.emitScored(score);
       } else {
-        console.log("player 1 scored!");
+        this.player1.scored();
+        this.player1Scored.next(this.player1.getScore());
+        var score = {
+          gameId: this.gameId,
+          senderId: this.gameSocket.getSenderId(),
+          player1: true,
+          player1Score: this.player1.getScore(),
+          player2: false,
+          player2Score: this.player2.getScore()
+        }
+        this.gameSocket.emitScored(score);
       }
+      this.ball.playerScored(this.gameW, this.gameH);
     }  
   }
 
@@ -155,7 +238,7 @@ export class PongService {
     }
   }
 
-  setupPlayer1(isLocal: boolean) {
+  setupPlayer1() {
     this.player1 = new Player(new Paddle(this.playerPadding, this.playerPaddleY, this.playerInitialW, this.playerInitialH, this.game2dContext));
     this.player1.id = "local";
     window.addEventListener("keydown", (e) => {
@@ -173,7 +256,7 @@ export class PongService {
     });
 }
 
-  setupPlayer2(isLocal: boolean) {
+  setupPlayer2() {
     this.player2 = new Player(new Paddle(this.gameW - this.playerPadding - this.playerInitialW, this.playerPaddleY, this.playerInitialW, this.playerInitialH, this.game2dContext));
     this.player2.id = "local";
     window.addEventListener("keydown", (e) => {
@@ -192,12 +275,33 @@ export class PongService {
   }
 
   clientPlaying(_id: string) {
+    console.log("player id:", _id);
     if (this.currentRoomSize == 1) {
-      this.player1 = new Player(new Paddle(this.playerPadding, this.playerPaddleY, this.playerInitialW, this.playerInitialH, this.game2dContext));
+      if (this.player1 == null) {
+        this.player1 = new Player(new Paddle(this.playerPadding, this.playerPaddleY, this.playerInitialW, this.playerInitialH, this.game2dContext));
+      }
       this.player1.id = _id;
     } else if (this.currentRoomSize == 2) {
-      this.player2 = new Player(new Paddle(this.gameW - this.playerPadding - this.playerInitialW, this.playerPaddleY, this.playerInitialW, this.playerInitialH, this.game2dContext));
+      if (this.player2 == null) {
+        this.player2 = new Player(new Paddle(this.gameW - this.playerPadding - this.playerInitialW, this.playerPaddleY, this.playerInitialW, this.playerInitialH, this.game2dContext));
+      }
       this.player2.id = _id;
     }
+  }
+
+  get gameInfo() {
+      return this.gameData.asObservable();
+  }
+
+  get endGame() {
+    return this.gameEnd.asObservable();
+  }
+
+  get player1ScoreChange() {
+    return this.player1Scored.asObservable();
+  }
+
+  get player2ScoreChange() {
+    return this.player2Scored.asObservable();
   }
 }

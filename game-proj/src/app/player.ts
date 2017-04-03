@@ -3,6 +3,8 @@ import { IPlayer } from './iplayer';
 export class Player implements IPlayer {
     obj;
     id;
+    private score = 0;
+    private enabled = false;
 
     constructor(_obj: any) {
         this.obj = _obj;
@@ -14,5 +16,28 @@ export class Player implements IPlayer {
 
     render() {
         this.obj.render();
+    }
+
+    scored() {
+        this.score++;
+    }
+
+    isWinner(totalScore: any) {
+        if (this.score >= totalScore) {
+            return true;
+        }
+        return false;
+    }
+
+    getScore() {
+        return this.score;
+    }
+
+    setEnabled(enb:boolean) {
+        this.enabled = enb;
+    }
+
+    getEnabled() {
+        return this.enabled;
     }
 } 

@@ -70,8 +70,7 @@ export class GameBall {
         this.xPos += this.speedX;
         this.yPos += this.speedY;
 
-        if (this.xPos < 0 || this.xPos + this.radius > bound_w) {
-            this.playerScored(bound_w, bound_h);
+        if (this.xPos <= 0 || this.xPos + this.radius > bound_w) {
             return true;
         }
 
